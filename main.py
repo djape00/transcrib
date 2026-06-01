@@ -17,6 +17,12 @@ def transcribe():
         
         file = request.files['file']
         
+        # DEBUG - provjeri što se prima
+        print(f"Filename: {file.filename}")
+        print(f"Content-Type: {file.content_type}")
+        print(f"File size: {len(file.read())} bytes")
+        file.seek(0)  # Reset file pointer
+        
         # Spremi fajl BEZ suffiksa
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             file.save(tmp.name)
