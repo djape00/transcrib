@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 print("Loading Whisper model...")
-model = whisper.load_model("base")
+model = whisper.load_model("tiny")
 print("Model loaded!")
 
 @app.route('/transcribe', methods=['POST'])
