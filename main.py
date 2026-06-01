@@ -4,61 +4,83 @@ import tempfile
 import os
 import time
 
-app = Flask(__name__)
+app = Flask(**name**)
 
-print("Loading model...")
+print("Loading Whisper model...")
+
 model = WhisperModel(
-    "base",
-    device="cpu",
-    compute_type="int8"
+"small",
+device="cpu",
+compute_type="int8"
 )
+
 print("Model loaded!")
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
+try:
+if 'file' not in request.files:
+return jsonify({"error": "No file provided"}), 400
+
+```
+    file = request.files['file']
+
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        file.save(tmp.name)
+        temp_path = tmp.name
+
     try:
-        if 'file' not in request.files:
-            return jsonify({"error": "No file"}), 400
+        start = time.time()
 
-        file = request.files['file']
+        segments, info = model.transcribe(
+            temp_path,
+            language="sr",
+            beam_size=5,
+            vad_filter=True
+        )
 
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            file.save(tmp.name)
+        text = " ".join(
+            segment.text.strip()
+            for segment in segments
+        )
 
-        try:
-            start = time.time()
+        elapsed = time.time() - start
 
-            segments, info = model.transcribe(
-                tmp.name,
-                language="sr",
-                beam_size=1
-            )
+        print(f"Detected language: {info.language}")
+        print(f"Language probability: {info.language_probability}")
+        print(f"Finished in {elapsed:.2f}s")
 
-            text = " ".join(
-                segment.text
-                for segment in segments
-            )
+        os.unlink(temp_path)
 
-            print(
-                f"Finished in {time.time() - start:.2f}s"
-            )
-
-            os.unlink(tmp.name)
-
-            return jsonify({"text": text})
-
-        except Exception as e:
-            os.unlink(tmp.name)
-            return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "text": text,
+            "language": info.language,
+            "time_seconds": round(elapsed, 2)
+        })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
 
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+except Exception as e:
+    return jsonify({
+        "error": str(e)
+    }), 500
+```
 
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({"status": "ok"})
+return jsonify({
+"status": "ok"
+})
 
+if **name** == '**main**':
+app.run(
+host='0.0.0.0',
+port=5000
+)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
