@@ -1,4 +1,4 @@
 setuptools>=65.0
 wheel
 Flask==3.0.0
-openai-whisper
+faster-whisper
