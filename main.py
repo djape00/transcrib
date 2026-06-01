@@ -17,12 +17,12 @@ def transcribe():
         
         file = request.files['file']
         
-        # Spremi fajl privremeno
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as tmp:
+        # Spremi fajl BEZ suffiksa
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
             file.save(tmp.name)
             
             try:
-                # Transkripcija direktno
+                # Whisper direktno obradi audio/video
                 result = model.transcribe(tmp.name, language="sr")
                 os.unlink(tmp.name)
                 
