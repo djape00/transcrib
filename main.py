@@ -1,40 +1,27 @@
-from flask import Flask, request, jsonify
-import whisper
-import tempfile
-import os
+from faster_whisper import WhisperModel
+import time
 
-app = Flask(__name__)
+model = WhisperModel(
+    "base",
+    device="cpu",
+    compute_type="int8"
+)
 
-print("Loading Whisper model...")
-model = whisper.load_model("base")
-print("Model loaded!")
+start = time.time()
 
-@app.route('/transcribe', methods=['POST'])
-def transcribe():
-    try:
-        if 'file' not in request.files:
-            return jsonify({"error": "No file"}), 400
-        
-        file = request.files['file']
-        
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            file.save(tmp.name)
-            
-            try:
-                result = model.transcribe(tmp.name, language="sr")
-                os.unlink(tmp.name)
-                
-                return jsonify({"text": result["text"]})
-            except Exception as e:
-                os.unlink(tmp.name)
-                return jsonify({"error": str(e)}), 500
-    
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+segments, info = model.transcribe(
+    tmp.name,
+    language="sr",
+    beam_size=1
+)
 
-@app.route('/health', methods=['GET'])
-def health():
-    return jsonify({"status": "ok"})
+text = " ".join(
+    segment.text
+    for segment in segments
+)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+print(
+    f"Finished in {time.time() - start:.2f}s"
+)
+
+return jsonify({"text": text})
