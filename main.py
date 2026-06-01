@@ -4,7 +4,7 @@ import tempfile
 import os
 import time
 
-app = Flask(**name**)
+app = Flask(__name__)
 
 print("Loading Whisper model...")
 
@@ -78,9 +78,8 @@ return jsonify({
 "status": "ok"
 })
 
-if **name** == '**main**':
-app.run(
-host='0.0.0.0',
-port=5000
-)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+
+
 
