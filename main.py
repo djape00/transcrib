@@ -11,38 +11,32 @@ print("Model loaded!")
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
+    print("=== ZAHTJEV PRIMLJEN ===")
+    print(f"Request files: {request.files}")
+    print(f"Request form: {request.form}")
+    
     try:
         if 'file' not in request.files:
+            print("ERROR: Nema 'file' u request.files!")
             return jsonify({"error": "No file"}), 400
         
         file = request.files['file']
-        
-        # DEBUG - provjeri što se prima
         print(f"Filename: {file.filename}")
         print(f"Content-Type: {file.content_type}")
-        print(f"File size: {len(file.read())} bytes")
-        file.seek(0)  # Reset file pointer
         
         # Spremi fajl BEZ suffiksa
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             file.save(tmp.name)
+            print(f"Fajl sparen: {tmp.name}")
+            print(f"Veličina: {os.path.getsize(tmp.name)} bytes")
             
             try:
-                # Whisper direktno obradi audio/video
+                print("Pokrećem Whisper...")
                 result = model.transcribe(tmp.name, language="sr")
                 os.unlink(tmp.name)
+                print("USPJEH!")
                 
                 return jsonify({"text": result["text"]})
             except Exception as e:
-                os.unlink(tmp.name)
-                return jsonify({"error": str(e)}), 500
-    
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/health', methods=['GET'])
-def health():
-    return jsonify({"status": "ok"})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+                print(f"GREŠKA: {str(e)}")
+                os.unlink
