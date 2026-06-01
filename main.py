@@ -3,6 +3,7 @@ from faster_whisper import WhisperModel
 import tempfile
 import os
 import time
+import subprocess
 
 app = Flask(__name__)
 
@@ -15,6 +16,7 @@ model = WhisperModel(
 )
 
 print("Model loaded!")
+
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
@@ -31,9 +33,26 @@ def transcribe():
         try:
             start = time.time()
 
+            # =========================
+            # 1. AUDIO CLEANUP (IMPORTANT)
+            # =========================
+            clean_audio = temp_path + "_clean.wav"
+
+            subprocess.run([
+                "ffmpeg",
+                "-y",
+                "-i", temp_path,
+                "-ar", "16000",
+                "-ac", "1",
+                "-af", "highpass=f=200,lowpass=f=3000,afftdn",
+                clean_audio
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+            # =========================
+            # 2. WHISPER TRANSCRIPTION
+            # =========================
             segments, info = model.transcribe(
-                temp_path,
-                language="sr",
+                clean_audio,
                 beam_size=5,
                 vad_filter=True
             )
@@ -49,7 +68,9 @@ def transcribe():
             print(f"Language probability: {info.language_probability}")
             print(f"Finished in {elapsed:.2f}s")
 
+            # cleanup
             os.unlink(temp_path)
+            os.unlink(clean_audio)
 
             return jsonify({
                 "text": text,
@@ -60,22 +81,18 @@ def transcribe():
         except Exception as e:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
+            if os.path.exists(clean_audio):
+                os.unlink(clean_audio)
 
-            return jsonify({
-                "error": str(e)
-            }), 500
+            return jsonify({"error": str(e)}), 500
 
     except Exception as e:
-        return jsonify({
-            "error": str(e)
-        }), 500
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({
-        "status": "ok"
-    })
+    return jsonify({"status": "ok"})
 
 
 if __name__ == '__main__':
