@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 print("Loading Whisper LARGE-V3 model...")
 model = WhisperModel(
-    "large",  # LARGE MODEL!
+    "medium",  # LARGE MODEL!
     device="cpu",
     compute_type="int8"  # Štedi memoriju
 )
