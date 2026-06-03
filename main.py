@@ -11,7 +11,6 @@ print("Loading Whisper model...")
 
 model = WhisperModel(
     "small",
-    "medium",
     device="cpu",
     compute_type="int8"
 )
